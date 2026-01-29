@@ -9,13 +9,18 @@ export const sendConversion = async (payload: {
   amount?: number;
 }) => {
   try {
-    await fetch(`${CPA_API_BASE}/cpa/event`, {
+    const url = `${CPA_API_BASE}/cpa/event`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
+    // 전송 확인용 로그 (개발 중에만 확인, 필요시 제거)
+    if (__DEV__) {
+      console.log('[CPA] sendConversion', payload.type, response.ok ? 'OK' : response.status, payload);
+    }
   } catch (e) {
     console.error('[CPA] sendConversion error', e);
   }

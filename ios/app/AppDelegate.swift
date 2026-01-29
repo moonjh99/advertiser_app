@@ -2,6 +2,8 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import AirbridgeReactNative
+
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,6 +19,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
+
+    AirbridgeReactNative.initializeSDK(name: "dushop", token:"546117dcd69e4670bad7bb9fdc2de506")
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
