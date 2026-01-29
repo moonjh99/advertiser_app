@@ -3,6 +3,8 @@ import { WebEvent } from '../types';
 import { trackEvent } from '../services/airbridge';
 import { sendConversion } from '../services/cpaApi';
 import { login, signup } from '../services/authApi';
+import { createOrder } from '../services/orderApi';
+import { setAuthToken } from '../services/tokenStorage';
 
 const sendMessageToWebView = (
   webView: WebView | null,
@@ -37,6 +39,11 @@ export const handleWebEvent = async (
           email: event.email,
           password: event.password,
         });
+
+        console.log('[WebView] LOGIN response', response);
+
+        // 로그인 성공 - 토큰 저장
+        setAuthToken(response.accessToken);
 
         // 로그인 성공 - WebView로 결과 전송
         sendMessageToWebView(webView, {
@@ -75,6 +82,9 @@ export const handleWebEvent = async (
             name: event.name,
           });
 
+          // 회원가입 성공 - 토큰 저장
+          setAuthToken(response.accessToken);
+
           // 회원가입 성공 - WebView로 결과 전송
           sendMessageToWebView(webView, {
             type: 'SIGN_UP_RESPONSE',
@@ -110,13 +120,64 @@ export const handleWebEvent = async (
       }
       break;
 
-    case 'PURCHASE':
-      trackEvent('order', 'purchase', event.amount);
-      sendConversion({
-        type: 'PURCHASE',
-        orderId: event.orderId,
-        amount: event.amount,
-      });
+    case 'CREATE_ORDER': {
+      try {
+        // WebView에서 보내는 형식: { type: 'CREATE_ORDER', orderRequest: { items: [...] } } 또는 { type: 'CREATE_ORDER', items: [...] }
+        const rawEvent = event as Record<string, unknown>;
+        const orderRequest = rawEvent.orderRequest as { items?: Array<{ productId: number; quantity: number }> } | undefined;
+        const items =
+          Array.isArray(orderRequest?.items) ? orderRequest.items
+          : Array.isArray(rawEvent.items) ? rawEvent.items
+          : Array.isArray((rawEvent.data as Record<string, unknown>)?.items)
+            ? (rawEvent.data as { items: Array<{ productId: number; quantity: number }> }).items
+          : [];
+
+        if (items.length === 0) {
+          throw new Error('주문할 상품이 없습니다. items 배열을 확인해주세요.');
+        }
+
+        const orderItems = items.map(
+          (item: { productId?: number; quantity?: number }) => ({
+            productId: Number(item.productId),
+            quantity: Number(item.quantity) || 1,
+          }),
+        );
+
+        console.log('[WebView] CREATE_ORDER event received', {
+          items: orderItems,
+        });
+
+        const response = await createOrder({
+          items: orderItems,
+        });
+
+        // 주문 생성 성공 - WebView로 결과 전송
+        sendMessageToWebView(webView, {
+          type: 'CREATE_ORDER_RESPONSE',
+          success: true,
+          data: response,
+        });
+
+        // 트래킹
+        trackEvent('order', 'purchase', response.totalAmount);
+        sendConversion({
+          type: 'PURCHASE',
+          orderId: response.id.toString(),
+          amount: response.totalAmount,
+        });
+      } catch (error) {
+        console.error('[WebView] CREATE_ORDER error', error);
+        // 주문 생성 실패 - WebView로 에러 전송
+        sendMessageToWebView(webView, {
+          type: 'CREATE_ORDER_RESPONSE',
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : '주문 생성에 실패했습니다.',
+        });
+      }
       break;
+    }
   }
 };
