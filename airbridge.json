@@ -1,22 +1,6 @@
 {
   "sdkEnabled": true,
-  "logLevel": "info",
+  "logLevel": "debug",
   "autoStartTrackingEnabled": true,
-  "autoDetermineTrackingAuthorizationTimeoutInSecond": 0,
-  "trackMetaDeferredAppLinkEnabled": false,
-  "sessionTimeoutInSecond": 0,
-  "metaInstallReferrerAppID": "",
-  "trackAirbridgeDeeplinkOnlyEnabled": false,
-  "trackingLinkCustomDomains": [],
-  "hashUserInformationEnabled": false,
-  "sdkSignatureID": "",
-  "sdkSignatureSecret": "",
-  "clearEventBufferOnInitializeEnabled": false,
-  "eventBufferCountLimit": 0,
-  "eventBufferSizeLimitInGibibyte": 0,
-  "eventTransmitIntervalInSecond": 0,
-  "isHandleAirbridgeDeeplinkOnly": false,
-  "collectTCFDataEnabled": false,
-  "trackingBlocklist": [],
-  "calculateSKAdNetworkByServerEnabled": false
+  "autoDetermineTrackingAuthorizationTimeoutInSecond": 120
 }

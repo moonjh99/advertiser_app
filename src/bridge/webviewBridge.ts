@@ -1,6 +1,6 @@
 import { WebView } from 'react-native-webview';
 import { WebEvent } from '../types';
-import { trackEvent } from '../services/airbridge';
+import { trackEvent, setUserId } from '../services/airbridge';
 import { sendConversion } from '../services/cpaApi';
 import { login, signup } from '../services/authApi';
 import { createOrder } from '../services/orderApi';
@@ -45,6 +45,9 @@ export const handleWebEvent = async (
         // 로그인 성공 - 토큰 저장
         setAuthToken(response.accessToken);
 
+        // Airbridge에 사용자 ID 등록 (전환 이벤트를 같은 유저로 묶기 위함)
+        setUserId(response.userId);
+
         // 로그인 성공 - WebView로 결과 전송
         sendMessageToWebView(webView, {
           type: 'LOGIN_RESPONSE',
@@ -53,7 +56,7 @@ export const handleWebEvent = async (
         });
 
         // 트래킹
-        trackEvent('user', 'login');
+        trackEvent('login', {});
       } catch (error) {
         console.error('[WebView] LOGIN error', error);
         // 로그인 실패 - WebView로 에러 전송
@@ -85,6 +88,9 @@ export const handleWebEvent = async (
           // 회원가입 성공 - 토큰 저장
           setAuthToken(response.accessToken);
 
+          // Airbridge에 사용자 ID 등록 (전환 이벤트를 같은 유저로 묶기 위함)
+          setUserId(response.userId);
+
           // 회원가입 성공 - WebView로 결과 전송
           sendMessageToWebView(webView, {
             type: 'SIGN_UP_RESPONSE',
@@ -93,7 +99,7 @@ export const handleWebEvent = async (
           });
 
           // 트래킹
-          trackEvent('user', 'sign_up');
+          trackEvent('sign_up', {});
           sendConversion({
             type: 'SIGN_UP',
             userId: response.userId,
@@ -112,7 +118,7 @@ export const handleWebEvent = async (
         }
       } else if ('userId' in event) {
         // 기존 회원가입 완료 이벤트 (트래킹용)
-        trackEvent('user', 'sign_up');
+        trackEvent('sign_up', {});
         sendConversion({
           type: 'SIGN_UP',
           userId: event.userId,
@@ -159,7 +165,7 @@ export const handleWebEvent = async (
         });
 
         // 트래킹
-        trackEvent('order', 'purchase', response.totalAmount);
+        trackEvent('purchase', { amount: response.totalAmount });
         sendConversion({
           type: 'PURCHASE',
           orderId: response.id.toString(),

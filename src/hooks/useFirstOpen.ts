@@ -4,7 +4,7 @@ import { sendConversion } from '../services/cpaApi';
 
 export const useFirstOpen = () => {
   useEffect(() => {
-    trackEvent('app', 'first_open');
+    trackEvent('first_open', {});
 
     sendConversion({
       type: 'FIRST_OPEN',
