@@ -1,3 +1,4 @@
+import { BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { WebEvent } from '../types';
 import { trackEvent, setUserId } from '../services/airbridge';
@@ -6,20 +7,17 @@ import { login, signup } from '../services/authApi';
 import { createOrder } from '../services/orderApi';
 import { setAuthToken } from '../services/tokenStorage';
 
-const sendMessageToWebView = (
+/** WebView로 메시지 전송 (window message 이벤트로 전달) */
+export const sendMessageToWebView = (
   webView: WebView | null,
-  message: any,
+  message: object,
 ) => {
   if (webView) {
     const messageStr = JSON.stringify(message);
-    // React Native WebView에서 WebView로 메시지 전송
-    // WebView에서는 window.addEventListener('message', ...)로 받을 수 있습니다
     const script = `
       (function() {
         const data = ${messageStr};
-        // MessageEvent를 사용하여 WebView로 메시지 전송
         window.dispatchEvent(new MessageEvent('message', { data: data }));
-        // document에도 이벤트 발생 (호환성)
         document.dispatchEvent(new MessageEvent('message', { data: data }));
       })();
     `;
@@ -27,11 +25,21 @@ const sendMessageToWebView = (
   }
 };
 
+/** 네이티브 뒤로가기 시 WebView로 GO_BACK 전송 (웹에서 history.back 또는 WEBVIEW_CANNOT_GO_BACK 응답) */
+export const sendGoBackToWebView = (webView: WebView | null) => {
+  sendMessageToWebView(webView, { type: 'GO_BACK' });
+};
+
 export const handleWebEvent = async (
   event: WebEvent,
   webView: WebView | null,
 ) => {
   switch (event.type) {
+    case 'WEBVIEW_CANNOT_GO_BACK':
+      // WebView 내부에서 더 이상 뒤로 갈 히스토리가 없을 때 → 앱 종료
+      BackHandler.exitApp();
+      break;
+
     case 'LOGIN':
       try {
         console.log('[WebView] LOGIN event received', { email: event.email });
